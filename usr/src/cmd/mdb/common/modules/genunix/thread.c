@@ -1042,7 +1042,7 @@ thread_getname(uintptr_t addr, char *namep, size_t namelen)
 		return (B_FALSE);
 	}
 
-	if (nameaddr != 0 && mdb_readstr(namep, namelen, addr + offset) == -1) {
+	if (nameaddr != 0 && mdb_readstr(namep, namelen, nameaddr) == -1) {
 		mdb_warn("error reading thread name");
 		/*
 		 * Just to be safe -- if mdb_readstr() succeeds, it always
