@@ -12,6 +12,7 @@
 #
 # Copyright (c) 2012 by Delphix. All rights reserved.
 # Copyright 2015 Nexenta Systems, Inc.  All rights reserved.
+# Copyright 2018, Joyent, Inc.
 #
 
 include $(SRC)/test/Makefile.com
@@ -30,7 +31,6 @@ OBJS = $(OBJS_LOCAL) $(OBJS_COMDIR)
 OBJS_PKCS = $(OBJS_LOCAL) $(OBJS_COMDIR) $(COMMONDIR)/cryptotest_pkcs.o
 OBJS_KCF = $(OBJS_LOCAL) $(OBJS_COMDIR) $(COMMONDIR)/cryptotest_kcf.o
 SRCS = $(OBJS:%.o=%.c)
-PKCSLIBS = -lpkcs11 -lcryptoutil
 
 CSTD = $(CSTD_GNU99)
 
@@ -40,7 +40,11 @@ $(CMDS) := FILEMODE = 0555
 LINTFLAGS += -xerroff=E_NAME_USED_NOT_DEF2
 LINTFLAGS += -xerroff=E_NAME_DEF_NOT_USED2
 
-CPPFLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -I$(COMMONDIR) -I$(SRC)/common/crypto/
+CPPFLAGS += -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64
+CPPFLAGS += -I$(COMMONDIR) -I$(SRC)/common/crypto/
+
+$(PROG)_pkcs := LDLIBS += -lpkcs11 -lcryptoutil
+$(PROG)_pkcs := CPPFLAGS += -DPKCS11
 
 all: $(PROGS)
 
