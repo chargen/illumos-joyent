@@ -22,7 +22,7 @@
 /* dynamic string utilities */
 
 #ifdef __cplusplus
-"C" {
+extern "C" {
 #endif
 
 typedef struct custr custr_t;
