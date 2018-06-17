@@ -1778,7 +1778,8 @@ lx_netlink_au_um(lx_netlink_sock_t *lxsock, lx_netlink_hdr_t *hdr, mblk_t *mp)
 }
 
 static int
-lx_netlink_au_emit_cb(void *s, uint_t type, const char *msg, uint_t size)
+lx_netlink_au_emit_cb(void *s, uint_t type, const char *msg, uint_t size,
+    boolean_t check_space)
 {
 	lx_netlink_sock_t *lxsock = (lx_netlink_sock_t *)s;
 	lx_netlink_hdr_t *hdr;
@@ -1816,12 +1817,33 @@ lx_netlink_au_emit_cb(void *s, uint_t type, const char *msg, uint_t size)
 		freeb(mp);
 		return (ENOMEM);
 	}
+
+	/*
+	 * so_queue_msg() enqueues the message then checks for the queue being
+	 * full.  We send a NULL mblk to perform the space check prior to
+	 * sending anything that could make it even fuller.
+	 */
+	if (check_space) {
+		lxsock->lxns_upcalls->su_recv(lxsock->lxns_uphandle, NULL,
+		    0, 0, &error, NULL);
+		if (error != 0) {
+			freeb(mp1);
+			freeb(mp);
+			lx_netlink_flowctrld++;
+			return (error);
+		}
+	}
+
 	/* As in lx_netlink_reply_sendup, send as T_UNITDATA_IND message. */
 	mp1->b_cont = mp;
 	lxsock->lxns_upcalls->su_recv(lxsock->lxns_uphandle, mp1,
 	    msgdsize(mp1), 0, &error, NULL);
 
-	return (error);
+	/*
+	 * Do not return ENOSPC after its been queued because our caller will
+	 * requeue on ENOSPC.
+	 */
+	return (error == ENOSPC ? 0 : error);
 }
 
 static int

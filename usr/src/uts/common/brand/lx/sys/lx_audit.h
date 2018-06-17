@@ -19,7 +19,8 @@
 extern "C" {
 #endif
 
-extern void lx_audit_init(int (*)(void *, uint_t, const char *, uint_t));
+extern void lx_audit_init(int (*)(void *, uint_t, const char *, uint_t,
+    boolean_t));
 extern void lx_audit_cleanup(void);
 extern void lx_audit_stop_worker(void *, void (*)(void *, boolean_t));
 extern int lx_audit_append_rule(void *, uint_t);

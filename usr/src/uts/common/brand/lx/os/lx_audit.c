@@ -354,7 +354,8 @@ typedef struct lx_audit_state {
  * Function pointer to netlink function used by audit worker threads to send
  * audit messages up to the user-level auditd.
  */
-static int (*lx_audit_emit_msg)(void *, uint_t, const char *, uint_t);
+static int (*lx_audit_emit_msg)(void *, uint_t, const char *, uint_t,
+    boolean_t);
 static kmutex_t	lx_audit_em_lock;		/* protects emit_msg above */
 
 /* From uts/common/brand/lx/syscall/lx_socket.c */
@@ -367,10 +368,17 @@ lx_audit_emit_syscall_event(uint_t mtype, void *lxsock, const char *msg)
 {
 	int err;
 
-	err = lx_audit_emit_msg(lxsock, mtype, msg, LX_AUDIT_MESSAGE_TEXT_MAX);
+	/*
+	 * Set the check_space argument to B_TRUE only on the first call.  It's
+	 * not a big deal of we buffer a little more than planned, but we really
+	 * should send the LX_NETLINK_NLMSG_DONE message if an earlier message
+	 * was sent.
+	 */
+	err = lx_audit_emit_msg(lxsock, mtype, msg, LX_AUDIT_MESSAGE_TEXT_MAX,
+	    B_TRUE);
 	if (err != 0)
 		return (err);
-	err = lx_audit_emit_msg(lxsock, 0, NULL, 0);
+	err = lx_audit_emit_msg(lxsock, 0, NULL, 0, B_FALSE);
 	return (err);
 }
 
@@ -1489,7 +1497,7 @@ lx_audit_stop_worker(void *s, void (*cb)(void *, boolean_t))
  * up to the auditd.
  */
 void
-lx_audit_init(int (*cb)(void *, uint_t, const char *, uint_t))
+lx_audit_init(int (*cb)(void *, uint_t, const char *, uint_t, boolean_t))
 {
 	lx_zone_data_t *lxzd = ztolxzd(curzone);
 	lx_audit_state_t *asp;
